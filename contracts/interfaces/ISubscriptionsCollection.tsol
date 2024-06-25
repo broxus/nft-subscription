@@ -1,0 +1,5 @@
+pragma ever-solidity >= 0.62.0;
+
+interface ISubscriptionsCollection {
+    function mintNft(address _recipient, uint64 _expireAt) external;
+}

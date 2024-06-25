@@ -1,0 +1,6 @@
+pragma ever-solidity >= 0.62.0;
+
+interface IMarketCallback {
+    function operationSuccess(uint64 callbackId) external;
+    function operationCancelled(uint64 callbackId) external;
+}

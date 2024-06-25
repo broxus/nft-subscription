@@ -1,0 +1,184 @@
+pragma ever-solidity >= 0.62.0;
+
+pragma AbiHeader expire;
+pragma AbiHeader time;
+pragma AbiHeader pubkey;
+
+import {TIP4_2Collection} from "@broxus/tip4/contracts/TIP4_2/TIP4_2Collection.tsol";
+import {TIP4_3Collection} from "@broxus/tip4/contracts/TIP4_3/TIP4_3Collection.tsol";
+import {IBurnableCollection} from "@broxus/tip4/contracts/interfaces/IBurnableCollection.tsol";
+import {MultiOwner} from "@broxus/tip4/contracts/access/MultiOwner.tsol";
+import {ISubscriptionsCollection} from "./interfaces/ISubscriptionsCollection.tsol";
+import {TIP4_1Collection} from "@broxus/tip4/contracts/TIP4_1/TIP4_1Collection.tsol";
+import {SubscriptionNft} from "./SubscriptionNft.tsol";
+import {ITIP4_1Collection} from "@broxus/tip4/contracts/TIP4_1/interfaces/ITIP4_1Collection.tsol";
+import {OwnableInternal} from "@broxus/tip4/contracts/access/OwnableInternal.tsol";
+import {Nft} from "@broxus/tip4/contracts/Nft.tsol";
+import {IAcceptNftBurnCallback} from "@broxus/tip4/contracts/interfaces/IAcceptNftBurnCallback.tsol";
+
+contract SubscriptionsCollection is TIP4_2Collection, TIP4_3Collection, IBurnableCollection, MultiOwner, ISubscriptionsCollection {
+
+    uint64 static nonce_;
+
+    uint8 constant value_is_less_than_required = 104;
+
+    /// _remainOnNft - the number of EVERs that will remain after the entire mint
+    /// process is completed on the Nft contract
+    uint128 _remainOnNft;
+    uint256 _totalMinted;
+
+    constructor(
+        TvmCell codeNft,
+        TvmCell codeIndex,
+        TvmCell codeIndexBasis,
+        address owner,
+        address[] managers,
+        uint128 remainOnNft,
+        string json
+    )
+    public
+    reserve
+    MultiOwner(owner, managers)
+    TIP4_1Collection(codeNft)
+    TIP4_2Collection(json)
+    TIP4_3Collection(codeIndex, codeIndexBasis)
+    {
+        tvm.accept();
+        _remainOnNft = remainOnNft;
+    }
+
+    modifier onlyManagerOrSelf() {
+        require(msg.sender == address(this) || isAnyOwner(), 1000);
+        _;
+    }
+
+    modifier reserve() {
+        _;
+        tvm.rawReserve(1 ever, 0);
+    }
+
+    function mintNft(address _recipient, uint64 _expireAt) public override reserve anyOwner {
+        require(
+            msg.value > _remainOnNft + _indexDeployValue * 2 + 0.2 ever,
+            value_is_less_than_required
+        );
+        _mintNft(_recipient, _expireAt, 0, 128);
+    }
+
+    function batchMintNft(address _recipient, uint64 _expireAt, uint32 _mintCount, uint32 _offset, address _remainingGasTo)
+        external
+        reserve
+        onlyManagerOrSelf
+    {
+        require(
+            msg.value > (_mintCount - _offset) * (_remainOnNft + _indexDeployValue * 2 + 0.2 ever),
+            value_is_less_than_required
+        );
+
+        uint32 takeUntil = math.min(_offset + 20, _mintCount);
+
+        for (uint i = _offset; i < takeUntil; i++) {
+            _mintNft(_recipient, _expireAt, _remainOnNft + _indexDeployValue * 2 + 0.1 ever, 1);
+        }
+
+        if (takeUntil < _mintCount) {
+            SubscriptionsCollection(address(this)).batchMintNft{
+                value: 0,
+                flag: 128,
+                bounce: false
+            }(_recipient, _expireAt, _mintCount, takeUntil, _remainingGasTo);
+        } else {
+            _remainingGasTo.transfer({
+                value: 0,
+                flag: 128 + 2,
+                bounce: false
+            });
+        }
+    }
+
+    /////////////
+
+    function codeDepth() public view returns (uint16) {
+        return (_buildNftCode(address(this)).depth());
+    }
+
+    function totalMinted() external view responsible returns (uint256 count) {
+        return {value: 0, flag: 64, bounce: false} (_totalMinted);
+    }
+
+    function _mintNft(address owner, uint64 _expireAt, uint128 value, uint16 flag) internal virtual {
+
+        uint256 id = uint256(_totalMinted);
+        _totalMinted++;
+        _totalSupply++;
+
+        TvmCell codeNft = _buildNftCode(address(this));
+        TvmCell stateNft = _buildNftState(codeNft, id);
+        address nftAddr = new SubscriptionNft{stateInit: stateNft, value: value, flag: flag}(
+            owner,
+            msg.sender,
+            _remainOnNft,
+            _expireAt,
+            _indexDeployValue,
+            _indexDestroyValue,
+            _codeIndex
+        );
+
+        emit NftCreated(id, nftAddr, owner, owner, msg.sender);
+    }
+
+    function setRemainOnNft(uint128 remainOnNft) external virtual onlyOwner {
+        _remainOnNft = remainOnNft;
+    }
+
+    function _buildNftState(TvmCell code, uint256 id)
+    internal
+    pure
+    virtual
+    override (TIP4_2Collection, TIP4_3Collection)
+    returns (TvmCell)
+    {
+        return tvm.buildStateInit({contr: Nft, varInit: {_id: id}, code: code});
+    }
+
+    function resolveIndexCodeHash(address collection, address owner) public view returns (uint256 hash) {
+        TvmCell code = _buildIndexCode(collection, owner);
+        return tvm.hash(code);
+    }
+
+    function acceptNftBurn(
+        uint256 _id,
+        address _owner,
+        address _manager,
+        address _sendGasTo,
+        address _callbackTo,
+        TvmCell _callbackPayload
+    ) external override {
+        require(msg.sender.value != 0 && _resolveNft(_id) == msg.sender, 100);
+
+        _totalSupply--;
+        emit NftBurned(_id, msg.sender, _owner, _manager);
+
+        if (_callbackTo.value != 0) {
+            IAcceptNftBurnCallback(_callbackTo).onAcceptNftBurn{
+                    value: 0,
+                    flag: 64 + 2,
+                    bounce: false
+                }(
+                address(this),
+                _id,
+                msg.sender,
+                _owner,
+                _manager,
+                _sendGasTo,
+                _callbackPayload
+            );
+        } else {
+            _sendGasTo.transfer({
+                value: 0,
+                flag: 64 + 2,
+                bounce: false
+            });
+        }
+    }
+}

@@ -1,0 +1,73 @@
+pragma ever-solidity >= 0.62.0;
+
+pragma AbiHeader expire;
+pragma AbiHeader pubkey;
+pragma AbiHeader time;
+
+import "@broxus/contracts/contracts/access/InternalOwner.tsol";
+import "./interfaces/ISubscriptionsCollection.tsol";
+import "./interfaces/IMarketCallback.tsol";
+
+contract SubscriptionsMarket is InternalOwner {
+
+    struct Rate {
+        uint128 price;
+        uint64 duration;
+    }
+
+    uint128 constant BASE_BALANCE = 1 ever;
+    uint128 constant BUY_GAS = 0.6 ever;
+
+    address collection_;
+    mapping(uint64 => Rate) rates_;
+
+    uint256 public totalSold;
+    uint256 public totalWithdraw;
+
+
+    constructor(address _owner) public {
+        tvm.accept();
+        setOwnership(_owner);
+    }
+
+    function setCollection(address _collection) external onlyOwner {
+        collection_ = _collection;
+    }
+
+    function collection() external view responsible returns(address) {
+        return {value: 0, flag: 64, bounce: false} collection_;
+    }
+
+    function setRates(mapping(uint64 => Rate) _rates) external onlyOwner {
+        rates_ = _rates;
+    }
+
+    function rates() external view responsible returns(mapping(uint64 => Rate) _rates) {
+        return {value: 0, flag: 64, bounce: false} rates_;
+    }
+
+    function buy(uint64 callbackId, uint64 rateId) external {
+        require(rates_.exists(rateId));
+
+        Rate rate = rates_[rateId];
+
+        if (msg.value > rate.price + BUY_GAS) {
+            totalSold += rate.price;
+
+            tvm.rawReserve(totalSold - totalWithdraw + BASE_BALANCE, 0);
+
+            ISubscriptionsCollection(collection_).mintNft {value: 0.5 ever, flag: 1, bounce: false}(
+                msg.sender,
+                block.timestamp + rate.duration
+            );
+
+            IMarketCallback(msg.sender).operationSuccess{value: 0, flag: 128, bounce: false}(callbackId);
+        } else {
+            tvm.rawReserve(totalSold - totalWithdraw + BASE_BALANCE, 0);
+            IMarketCallback(msg.sender).operationCancelled{value: 0, flag: 128, bounce: false}(callbackId);
+        }
+    }
+
+
+
+}

@@ -1,0 +1,16 @@
+pragma ever-solidity >= 0.62.0;
+
+pragma AbiHeader expire;
+pragma AbiHeader time;
+pragma AbiHeader pubkey;
+
+import {IMarketCallback} from "./interfaces/IMarketCallback.tsol";
+
+contract Callbacks is IMarketCallback {
+
+    constructor() public {}
+
+    function operationSuccess(uint64 callbackId) override external { }
+
+    function operationCancelled(uint64 callbackId) override external { }
+}
