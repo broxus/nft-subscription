@@ -59,12 +59,13 @@ contract SubscriptionsMarket is InternalOwner, IUpgradable {
 
             tvm.rawReserve(totalSold - totalWithdraw + BASE_BALANCE, 0);
 
-            ISubscriptionsCollection(collection_).mintNft {value: 2 ever, flag: 1, bounce: false}(
+            IMarketCallback(msg.sender).operationSuccess{value: 0.001 ever, flag: 1, bounce: false}(callbackId);
+
+            ISubscriptionsCollection(collection_).mintNft {value: 0, flag: 128, bounce: false}(
                 msg.sender,
                 block.timestamp + rate.duration
             );
 
-            IMarketCallback(msg.sender).operationSuccess{value: 0, flag: 128, bounce: false}(callbackId);
         } else {
             tvm.rawReserve(totalSold - totalWithdraw + BASE_BALANCE, 0);
             IMarketCallback(msg.sender).operationCancelled{value: 0, flag: 128, bounce: false}(callbackId);
