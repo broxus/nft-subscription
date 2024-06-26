@@ -57,7 +57,10 @@ contract SubscriptionsCollection is
         tvm.accept();
         _remainOnNft = remainOnNft;
         managers_ = managers;
-    }
+        
+        _indexDeployValue = 0.05 ever;
+        _indexDestroyValue = 0.05 ever;
+     }
 
     modifier onlyManagerOrSelf() {
         require(msg.sender == address(this) || isAnyOwner(), 1000);

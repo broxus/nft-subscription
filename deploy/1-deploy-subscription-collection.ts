@@ -21,7 +21,7 @@ export default async (): Promise<void> => {
         codeIndexBasis: IndexBasisCode,
         owner: owner.account.address,
         managers: [market.address],
-        remainOnNft: toNano(1),
+        remainOnNft: toNano(0.2),
         json: JSON.stringify(Collection),
       },
       value: toNano(2),
