@@ -4,11 +4,14 @@ pragma AbiHeader expire;
 pragma AbiHeader pubkey;
 pragma AbiHeader time;
 
+import "@broxus/contracts/contracts/libraries/MsgFlag.tsol";
 import "@broxus/contracts/contracts/access/InternalOwner.tsol";
+
 import "./interfaces/ISubscriptionsCollection.tsol";
 import "./interfaces/IMarketCallback.tsol";
+import "./interfaces/IUpgradable.tsol";
 
-contract SubscriptionsMarket is InternalOwner {
+contract SubscriptionsMarket is InternalOwner, IUpgradable {
 
     struct Rate {
         uint128 price;
@@ -56,7 +59,7 @@ contract SubscriptionsMarket is InternalOwner {
 
             tvm.rawReserve(totalSold - totalWithdraw + BASE_BALANCE, 0);
 
-            ISubscriptionsCollection(collection_).mintNft {value: 0.5 ever, flag: 1, bounce: false}(
+            ISubscriptionsCollection(collection_).mintNft {value: 2 ever, flag: 1, bounce: false}(
                 msg.sender,
                 block.timestamp + rate.duration
             );
@@ -68,6 +71,53 @@ contract SubscriptionsMarket is InternalOwner {
         }
     }
 
+    function upgrade(TvmCell _code, optional(address) _remainingGasTo) external override onlyOwner {
+        tvm.rawReserve(BASE_BALANCE, 0);
 
+        address remainingGasTo = _remainingGasTo.hasValue() ? _remainingGasTo.get() : msg.sender;
 
+        TvmCell data = abi.encode(
+            remainingGasTo,
+            owner,
+            collection_,
+            rates_,
+            totalSold,
+            totalWithdraw
+        );
+
+        tvm.setcode(_code);
+        tvm.setCurrentCode(_code);
+
+        onCodeUpgrade(data);
+    }
+
+    function onCodeUpgrade(TvmCell _data) private {
+        tvm.resetStorage();
+
+        address remainingGasTo;
+
+        (
+            remainingGasTo,
+            owner,
+            collection_,
+            rates_,
+            totalSold,
+            totalWithdraw
+        ) = abi.decode(_data, (
+            address,
+            address,
+            address,
+            mapping(uint64 => Rate),
+            uint256,
+            uint256
+        ));
+
+        emit Upgraded();
+
+        remainingGasTo.transfer({
+            value: 0,
+            flag: MsgFlag.ALL_NOT_RESERVED + MsgFlag.IGNORE_ERRORS,
+            bounce: false
+        });
+    }
 }

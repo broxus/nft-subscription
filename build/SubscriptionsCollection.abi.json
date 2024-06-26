@@ -18,6 +18,21 @@
 			]
 		},
 		{
+			"name": "addManager",
+			"inputs": [
+				{"name":"newManager","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "resetManagers",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "mintNft",
 			"inputs": [
 				{"name":"_recipient","type":"address"},
@@ -36,6 +51,14 @@
 				{"name":"_remainingGasTo","type":"address"}
 			],
 			"outputs": [
+			]
+		},
+		{
+			"name": "managers",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"value0","type":"address[]"}
 			]
 		},
 		{
@@ -87,26 +110,12 @@
 			]
 		},
 		{
-			"name": "addManager",
+			"name": "upgrade",
 			"inputs": [
-				{"name":"newManager","type":"address"}
+				{"name":"_code","type":"cell"},
+				{"name":"_remainingGasTo","type":"optional(address)"}
 			],
 			"outputs": [
-			]
-		},
-		{
-			"name": "resetManagers",
-			"inputs": [
-			],
-			"outputs": [
-			]
-		},
-		{
-			"name": "managers",
-			"inputs": [
-			],
-			"outputs": [
-				{"name":"value0","type":"address[]"}
 			]
 		},
 		{
@@ -232,6 +241,13 @@
 	],
 	"events": [
 		{
+			"name": "Upgraded",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "ManagerAdded",
 			"inputs": [
 				{"name":"newManager","type":"address"}
@@ -293,9 +309,9 @@
 		{"name":"_indexDestroyValue","type":"uint128"},
 		{"name":"_deployIndexBasisValue","type":"uint128"},
 		{"name":"owner_","type":"address"},
-		{"name":"managers_","type":"address[]"},
 		{"name":"nonce_","type":"uint64"},
 		{"name":"_remainOnNft","type":"uint128"},
-		{"name":"_totalMinted","type":"uint256"}
+		{"name":"_totalMinted","type":"uint256"},
+		{"name":"managers_","type":"address[]"}
 	]
 }

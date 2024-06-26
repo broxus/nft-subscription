@@ -55,6 +55,15 @@
 			]
 		},
 		{
+			"name": "upgrade",
+			"inputs": [
+				{"name":"_code","type":"cell"},
+				{"name":"_remainingGasTo","type":"optional(address)"}
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "transferOwnership",
 			"inputs": [
 				{"name":"newOwner","type":"address"}
@@ -97,6 +106,13 @@
 	"data": [
 	],
 	"events": [
+		{
+			"name": "Upgraded",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
 		{
 			"name": "OwnershipTransferred",
 			"inputs": [

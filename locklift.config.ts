@@ -1,6 +1,8 @@
+import '@broxus/locklift-verifier';
+import '@broxus/locklift-deploy';
+
 import { LockliftConfig, lockliftChai } from "locklift";
 import { FactorySource } from "./build/factorySource";
-import '@broxus/locklift-verifier';
 import { Deployments } from '@broxus/locklift-deploy';
 import * as dotenv from 'dotenv';
 
@@ -53,10 +55,10 @@ const config: LockliftConfig = {
         key: '172af540e43a524763dd53b26a066d472a97c4de37d5498170564510608250c3',
       },
       connection: {
-        id: 1001,
-        type: "proxy",
-        // @ts-ignore
-        data: {}
+        id: 2,
+        group: 'local',
+        type: 'proxy',
+        data: {} as never,
       },
       keys: {
         phrase: 'action inject penalty envelope rabbit element slim tornado dinner pizza off blood',

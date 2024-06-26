@@ -7,7 +7,6 @@ pragma AbiHeader pubkey;
 import {TIP4_2Collection} from "@broxus/tip4/contracts/TIP4_2/TIP4_2Collection.tsol";
 import {TIP4_3Collection} from "@broxus/tip4/contracts/TIP4_3/TIP4_3Collection.tsol";
 import {IBurnableCollection} from "@broxus/tip4/contracts/interfaces/IBurnableCollection.tsol";
-import {MultiOwner} from "@broxus/tip4/contracts/access/MultiOwner.tsol";
 import {ISubscriptionsCollection} from "./interfaces/ISubscriptionsCollection.tsol";
 import {TIP4_1Collection} from "@broxus/tip4/contracts/TIP4_1/TIP4_1Collection.tsol";
 import {SubscriptionNft} from "./SubscriptionNft.tsol";
@@ -15,8 +14,18 @@ import {ITIP4_1Collection} from "@broxus/tip4/contracts/TIP4_1/interfaces/ITIP4_
 import {OwnableInternal} from "@broxus/tip4/contracts/access/OwnableInternal.tsol";
 import {Nft} from "@broxus/tip4/contracts/Nft.tsol";
 import {IAcceptNftBurnCallback} from "@broxus/tip4/contracts/interfaces/IAcceptNftBurnCallback.tsol";
+import "./interfaces/IUpgradable.tsol";
+import "@broxus/contracts/contracts/libraries/MsgFlag.tsol";
+import "@broxus/contracts/contracts/_ErrorCodes.tsol";
 
-contract SubscriptionsCollection is TIP4_2Collection, TIP4_3Collection, IBurnableCollection, MultiOwner, ISubscriptionsCollection {
+contract SubscriptionsCollection is
+    TIP4_2Collection,
+    TIP4_3Collection,
+    IBurnableCollection,
+    OwnableInternal,
+    ISubscriptionsCollection,
+    IUpgradable
+{
 
     uint64 static nonce_;
 
@@ -27,6 +36,8 @@ contract SubscriptionsCollection is TIP4_2Collection, TIP4_3Collection, IBurnabl
     uint128 _remainOnNft;
     uint256 _totalMinted;
 
+    address[] private managers_;
+
     constructor(
         TvmCell codeNft,
         TvmCell codeIndex,
@@ -36,15 +47,16 @@ contract SubscriptionsCollection is TIP4_2Collection, TIP4_3Collection, IBurnabl
         uint128 remainOnNft,
         string json
     )
-    public
-    reserve
-    MultiOwner(owner, managers)
-    TIP4_1Collection(codeNft)
-    TIP4_2Collection(json)
-    TIP4_3Collection(codeIndex, codeIndexBasis)
+        public
+        reserve
+        OwnableInternal(owner)
+        TIP4_1Collection(codeNft)
+        TIP4_2Collection(json)
+        TIP4_3Collection(codeIndex, codeIndexBasis)
     {
         tvm.accept();
         _remainOnNft = remainOnNft;
+        managers_ = managers;
     }
 
     modifier onlyManagerOrSelf() {
@@ -55,6 +67,35 @@ contract SubscriptionsCollection is TIP4_2Collection, TIP4_3Collection, IBurnabl
     modifier reserve() {
         _;
         tvm.rawReserve(1 ever, 0);
+    }
+
+    modifier anyOwner() {
+        require(isAnyOwner(), _ErrorCodes.NOT_OWNER);
+        _;
+    }
+
+    function addManager(address newManager) external onlyOwner {
+        require(newManager.value != 0, _ErrorCodes.ZERO_OWNER);
+        managers_.push(newManager);
+        emit ManagerAdded(newManager);
+    }
+
+    function resetManagers() external onlyOwner {
+        managers_ = new address[](0);
+        emit ManagersReset();
+    }
+
+    function isAnyOwner() internal view returns (bool) {
+        if (msg.sender == owner()) {
+            return true;
+        }
+        for (uint i = 0; i < managers_.length; i++) {
+            if(managers_[i] == msg.sender)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     function mintNft(address _recipient, uint64 _expireAt) public override reserve anyOwner {
@@ -98,6 +139,10 @@ contract SubscriptionsCollection is TIP4_2Collection, TIP4_3Collection, IBurnabl
 
     /////////////
 
+    function managers() public view virtual returns (address[]) {
+        return managers_;
+    }
+
     function codeDepth() public view returns (uint16) {
         return (_buildNftCode(address(this)).depth());
     }
@@ -132,11 +177,11 @@ contract SubscriptionsCollection is TIP4_2Collection, TIP4_3Collection, IBurnabl
     }
 
     function _buildNftState(TvmCell code, uint256 id)
-    internal
-    pure
-    virtual
-    override (TIP4_2Collection, TIP4_3Collection)
-    returns (TvmCell)
+        internal
+        pure
+        virtual
+        override (TIP4_2Collection, TIP4_3Collection)
+        returns (TvmCell)
     {
         return tvm.buildStateInit({contr: Nft, varInit: {_id: id}, code: code});
     }
@@ -160,19 +205,20 @@ contract SubscriptionsCollection is TIP4_2Collection, TIP4_3Collection, IBurnabl
         emit NftBurned(_id, msg.sender, _owner, _manager);
 
         if (_callbackTo.value != 0) {
-            IAcceptNftBurnCallback(_callbackTo).onAcceptNftBurn{
+            IAcceptNftBurnCallback(_callbackTo)
+                .onAcceptNftBurn{
                     value: 0,
                     flag: 64 + 2,
                     bounce: false
                 }(
-                address(this),
-                _id,
-                msg.sender,
-                _owner,
-                _manager,
-                _sendGasTo,
-                _callbackPayload
-            );
+                    address(this),
+                    _id,
+                    msg.sender,
+                    _owner,
+                    _manager,
+                    _sendGasTo,
+                    _callbackPayload
+                );
         } else {
             _sendGasTo.transfer({
                 value: 0,
@@ -180,5 +226,83 @@ contract SubscriptionsCollection is TIP4_2Collection, TIP4_3Collection, IBurnabl
                 bounce: false
             });
         }
+    }
+
+    function upgrade(TvmCell _code, optional(address) _remainingGasTo) external override onlyOwner reserve {
+        address remainingGasTo = _remainingGasTo.hasValue() ? _remainingGasTo.get() : msg.sender;
+
+        TvmCell data = abi.encode(
+            remainingGasTo,
+            nonce_,
+            _remainOnNft,
+            _totalMinted,
+            _json,
+            _codeNft,
+            _totalSupply,
+            _supportedInterfaces,
+            _codeIndex,
+            _codeIndexBasis,
+            managers_,
+            owner(),
+            _indexDeployValue,
+            _indexDestroyValue,
+            _deployIndexBasisValue
+        );
+
+        tvm.setcode(_code);
+        tvm.setCurrentCode(_code);
+
+        onCodeUpgrade(data);
+    }
+
+    function onCodeUpgrade(TvmCell _data) private {
+        tvm.resetStorage();
+
+        address remainingGasTo;
+        address oldOwner;
+
+        (
+            remainingGasTo,
+            nonce_,
+            _remainOnNft,
+            _totalMinted,
+            _json,
+            _codeNft,
+            _totalSupply,
+            _supportedInterfaces,
+            _codeIndex,
+            _codeIndexBasis,
+            managers_,
+            oldOwner,
+            _indexDeployValue,
+            _indexDestroyValue,
+            _deployIndexBasisValue
+        ) = abi.decode(_data, (
+            address,
+            uint64,
+            uint128,
+            uint256,
+            string,
+            TvmCell,
+            uint128,
+            mapping(bytes4 => bool),
+            TvmCell,
+            TvmCell,
+            address[],
+            address,
+            uint128,
+            uint128,
+            uint128
+        ));
+
+        _transferOwnership(oldOwner);
+
+        emit Upgraded();
+
+        remainingGasTo.transfer({
+            value: 0,
+            flag: MsgFlag.ALL_NOT_RESERVED + MsgFlag.IGNORE_ERRORS,
+            bounce: false
+        });
     }
 }
