@@ -51,6 +51,18 @@ describe('Upgrade', () => {
         .and.to.call('mintNft').count(1)
         .and.to.emit('NftCreated').count(1);
     });
+
+    it('withdraw()', async () => {
+      const { traceTree } = await locklift.tracing.trace(
+        market.methods
+          .withdraw({ recipient: owner, amount: 1 })
+          .send({ from: owner, amount: toNano(5), bounce: true }),
+      );
+
+      return expect(traceTree)
+        .to.call('withdraw').count(1)
+        .and.to.emit('Withdrawal').count(1);
+    });
   });
 
   describe('upgrade()', () => {

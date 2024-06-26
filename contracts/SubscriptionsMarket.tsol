@@ -71,8 +71,31 @@ contract SubscriptionsMarket is InternalOwner, IUpgradable {
         }
     }
 
+    event Withdrawal(
+        address recipient,
+        address caller,
+        uint128 amount
+    );
+
+    function withdraw(address recipient, uint128 amount) external onlyOwner {
+        require(recipient.value != 0 && recipient != address(this), 2001);
+        require(amount > 0 && amount <= totalSold - totalWithdraw, 2002);
+
+        totalWithdraw += amount;
+
+        tvm.rawReserve(totalSold - totalWithdraw + BASE_BALANCE, 0);
+
+        emit Withdrawal(recipient, msg.sender, amount);
+
+        recipient.transfer({
+            value: 0,
+            flag: MsgFlag.ALL_NOT_RESERVED + MsgFlag.IGNORE_ERRORS,
+            bounce: false
+        });
+    }
+
     function upgrade(TvmCell _code, optional(address) _remainingGasTo) external override onlyOwner {
-        tvm.rawReserve(BASE_BALANCE, 0);
+        tvm.rawReserve(totalSold - totalWithdraw + BASE_BALANCE, 0);
 
         address remainingGasTo = _remainingGasTo.hasValue() ? _remainingGasTo.get() : msg.sender;
 

@@ -55,6 +55,15 @@
 			]
 		},
 		{
+			"name": "withdraw",
+			"inputs": [
+				{"name":"recipient","type":"address"},
+				{"name":"amount","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "upgrade",
 			"inputs": [
 				{"name":"_code","type":"cell"},
@@ -106,6 +115,16 @@
 	"data": [
 	],
 	"events": [
+		{
+			"name": "Withdrawal",
+			"inputs": [
+				{"name":"recipient","type":"address"},
+				{"name":"caller","type":"address"},
+				{"name":"amount","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
 		{
 			"name": "Upgraded",
 			"inputs": [
