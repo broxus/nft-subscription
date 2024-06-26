@@ -36,7 +36,8 @@
 			"name": "mintNft",
 			"inputs": [
 				{"name":"_recipient","type":"address"},
-				{"name":"_expireAt","type":"uint64"}
+				{"name":"_expireAt","type":"uint64"},
+				{"name":"_remainingGasTo","type":"address"}
 			],
 			"outputs": [
 			]

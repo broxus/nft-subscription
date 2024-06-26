@@ -63,7 +63,8 @@ contract SubscriptionsMarket is InternalOwner, IUpgradable {
 
             ISubscriptionsCollection(collection_).mintNft {value: 0, flag: 128, bounce: false}(
                 msg.sender,
-                block.timestamp + rate.duration
+                block.timestamp + rate.duration,
+                msg.sender
             );
 
         } else {

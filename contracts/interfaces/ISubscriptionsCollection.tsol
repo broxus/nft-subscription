@@ -4,5 +4,5 @@ interface ISubscriptionsCollection {
     event ManagerAdded(address newManager);
     event ManagersReset();
 
-    function mintNft(address _recipient, uint64 _expireAt) external;
+    function mintNft(address _recipient, uint64 _expireAt, address _remainingGasTo) external;
 }

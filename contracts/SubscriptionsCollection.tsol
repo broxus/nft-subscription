@@ -57,7 +57,7 @@ contract SubscriptionsCollection is
         tvm.accept();
         _remainOnNft = remainOnNft;
         managers_ = managers;
-        
+
         _indexDeployValue = 0.05 ever;
         _indexDestroyValue = 0.05 ever;
      }
@@ -101,12 +101,12 @@ contract SubscriptionsCollection is
         return false;
     }
 
-    function mintNft(address _recipient, uint64 _expireAt) public override reserve anyOwner {
+    function mintNft(address _recipient, uint64 _expireAt, address _remainingGasTo) public override reserve anyOwner {
         require(
             msg.value > _remainOnNft + _indexDeployValue * 2 + 0.2 ever,
             value_is_less_than_required
         );
-        _mintNft(_recipient, _expireAt, 0, 128);
+        _mintNft(_recipient, _expireAt, _remainingGasTo, 0, 128);
     }
 
     function batchMintNft(address _recipient, uint64 _expireAt, uint32 _mintCount, uint32 _offset, address _remainingGasTo)
@@ -122,7 +122,7 @@ contract SubscriptionsCollection is
         uint32 takeUntil = math.min(_offset + 20, _mintCount);
 
         for (uint i = _offset; i < takeUntil; i++) {
-            _mintNft(_recipient, _expireAt, _remainOnNft + _indexDeployValue * 2 + 0.1 ever, 1);
+            _mintNft(_recipient, _expireAt,  _remainingGasTo,_remainOnNft + _indexDeployValue * 2 + 0.1 ever, 1);
         }
 
         if (takeUntil < _mintCount) {
@@ -154,7 +154,7 @@ contract SubscriptionsCollection is
         return {value: 0, flag: 64, bounce: false} (_totalMinted);
     }
 
-    function _mintNft(address owner, uint64 _expireAt, uint128 value, uint16 flag) internal virtual {
+    function _mintNft(address _owner, uint64 _expireAt, address _remainingGasTo, uint128 value, uint16 flag) internal virtual {
 
         uint256 id = uint256(_totalMinted);
         _totalMinted++;
@@ -163,8 +163,8 @@ contract SubscriptionsCollection is
         TvmCell codeNft = _buildNftCode(address(this));
         TvmCell stateNft = _buildNftState(codeNft, id);
         address nftAddr = new SubscriptionNft{stateInit: stateNft, value: value, flag: flag}(
-            owner,
-            msg.sender,
+            _owner,
+            _remainingGasTo,
             _remainOnNft,
             _expireAt,
             _indexDeployValue,
@@ -172,7 +172,7 @@ contract SubscriptionsCollection is
             _codeIndex
         );
 
-        emit NftCreated(id, nftAddr, owner, owner, msg.sender);
+        emit NftCreated(id, nftAddr, _owner, _owner, _remainingGasTo);
     }
 
     function setRemainOnNft(uint128 remainOnNft) external virtual onlyOwner {
