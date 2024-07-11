@@ -48,6 +48,11 @@ const config: LockliftConfig = {
     // Or specify version of linker
     version: "0.15.48",
   },
+  verifier: {
+    verifierVersion: 'latest',
+    apiKey: process.env['VENOMSCAN_API_KEY']!,
+    secretKey: process.env['VENOMSCAN_SECRET_KEY']!
+  },
   networks: {
     locklift: {
       giver: {
@@ -65,25 +70,25 @@ const config: LockliftConfig = {
         amount: 20,
       },
     },
-    // venom_mainnet: {
-    //   connection: {
-    //     id: 1,
-    //     type: 'jrpc',
-    //     group: 'main',
-    //     data: {
-    //       endpoint: process.env.VENOM_MAINNET_RPC_NETWORK_ENDPOINT ?? '',
-    //     },
-    //   },
-    //   giver: {
-    //     address: process.env.VENOM_MAINNET_GIVER_ADDRESS ?? '',
-    //     phrase: process.env.VENOM_MAINNET_GIVER_PHRASE ?? '',
-    //     accountId: 0,
-    //   },
-    //   keys: {
-    //     phrase: process.env.VENOM_MAINNET_PHRASE,
-    //     amount: 100,
-    //   },
-    // }
+    venom_mainnet: {
+      connection: {
+        id: 1,
+        type: 'jrpc',
+        group: 'main',
+        data: {
+          endpoint: process.env.VENOM_MAINNET_RPC_NETWORK_ENDPOINT ?? '',
+        },
+      },
+      giver: {
+        address: process.env.VENOM_MAINNET_GIVER_ADDRESS ?? '',
+        phrase: process.env.VENOM_MAINNET_GIVER_PHRASE ?? '',
+        accountId: 0,
+      },
+      keys: {
+        phrase: process.env.VENOM_MAINNET_PHRASE,
+        amount: 100,
+      },
+    }
   },
   mocha: {
     timeout: 2000000,

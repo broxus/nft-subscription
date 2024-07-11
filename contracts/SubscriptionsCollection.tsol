@@ -101,15 +101,15 @@ contract SubscriptionsCollection is
         return false;
     }
 
-    function mintNft(address _recipient, uint64 _expireAt, address _remainingGasTo) public override reserve anyOwner {
+    function mintNft(address _recipient, uint64 _expireAt, uint64 _rateId, address _remainingGasTo) public override reserve anyOwner {
         require(
             msg.value > _remainOnNft + _indexDeployValue * 2 + 0.2 ever,
             value_is_less_than_required
         );
-        _mintNft(_recipient, _expireAt, _remainingGasTo, 0, 128);
+        _mintNft(_recipient, _expireAt, _rateId, _remainingGasTo, 0, 128);
     }
 
-    function batchMintNft(address _recipient, uint64 _expireAt, uint32 _mintCount, uint32 _offset, address _remainingGasTo)
+    function batchMintNft(address _recipient, uint64 _expireAt, uint64 _rateId, uint32 _mintCount, uint32 _offset, address _remainingGasTo)
         external
         reserve
         onlyManagerOrSelf
@@ -122,7 +122,7 @@ contract SubscriptionsCollection is
         uint32 takeUntil = math.min(_offset + 20, _mintCount);
 
         for (uint i = _offset; i < takeUntil; i++) {
-            _mintNft(_recipient, _expireAt,  _remainingGasTo,_remainOnNft + _indexDeployValue * 2 + 0.1 ever, 1);
+            _mintNft(_recipient, _expireAt,  _rateId,_remainingGasTo,_remainOnNft + _indexDeployValue * 2 + 0.1 ever, 1);
         }
 
         if (takeUntil < _mintCount) {
@@ -130,7 +130,7 @@ contract SubscriptionsCollection is
                 value: 0,
                 flag: 128,
                 bounce: false
-            }(_recipient, _expireAt, _mintCount, takeUntil, _remainingGasTo);
+            }(_recipient, _expireAt, _rateId, _mintCount, takeUntil, _remainingGasTo);
         } else {
             _remainingGasTo.transfer({
                 value: 0,
@@ -154,7 +154,7 @@ contract SubscriptionsCollection is
         return {value: 0, flag: 64, bounce: false} (_totalMinted);
     }
 
-    function _mintNft(address _owner, uint64 _expireAt, address _remainingGasTo, uint128 value, uint16 flag) internal virtual {
+    function _mintNft(address _owner, uint64 _expireAt, uint64 _rateId, address _remainingGasTo, uint128 value, uint16 flag) internal virtual {
 
         uint256 id = uint256(_totalMinted);
         _totalMinted++;
@@ -167,6 +167,7 @@ contract SubscriptionsCollection is
             _remainingGasTo,
             _remainOnNft,
             _expireAt,
+            _rateId,
             _indexDeployValue,
             _indexDestroyValue,
             _codeIndex

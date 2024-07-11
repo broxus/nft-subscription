@@ -10,6 +10,7 @@
 				{"name":"sendGasTo","type":"address"},
 				{"name":"remainOnNft","type":"uint128"},
 				{"name":"_expireAt","type":"uint64"},
+				{"name":"_rateId","type":"uint64"},
 				{"name":"indexDeployValue","type":"uint128"},
 				{"name":"indexDestroyValue","type":"uint128"},
 				{"name":"codeIndex","type":"cell"}
@@ -24,6 +25,15 @@
 			],
 			"outputs": [
 				{"name":"timestamp","type":"uint64"}
+			]
+		},
+		{
+			"name": "rateId",
+			"inputs": [
+				{"name":"answerId","type":"uint32"}
+			],
+			"outputs": [
+				{"name":"rate","type":"uint64"}
 			]
 		},
 		{
@@ -184,6 +194,7 @@
 		{"name":"_indexDeployValue","type":"uint128"},
 		{"name":"_indexDestroyValue","type":"uint128"},
 		{"name":"_codeIndex","type":"cell"},
-		{"name":"expireAt_","type":"uint64"}
+		{"name":"expireAt_","type":"uint64"},
+		{"name":"rateId_","type":"uint64"}
 	]
 }

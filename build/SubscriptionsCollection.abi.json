@@ -37,6 +37,7 @@
 			"inputs": [
 				{"name":"_recipient","type":"address"},
 				{"name":"_expireAt","type":"uint64"},
+				{"name":"_rateId","type":"uint64"},
 				{"name":"_remainingGasTo","type":"address"}
 			],
 			"outputs": [
@@ -47,6 +48,7 @@
 			"inputs": [
 				{"name":"_recipient","type":"address"},
 				{"name":"_expireAt","type":"uint64"},
+				{"name":"_rateId","type":"uint64"},
 				{"name":"_mintCount","type":"uint32"},
 				{"name":"_offset","type":"uint32"},
 				{"name":"_remainingGasTo","type":"address"}

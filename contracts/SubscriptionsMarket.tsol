@@ -37,7 +37,7 @@ contract SubscriptionsMarket is InternalOwner, IUpgradable {
         collection_ = _collection;
     }
 
-    function collection() external view responsible returns(address) {
+    function collection() external view responsible returns (address) {
         return {value: 0, flag: 64, bounce: false} collection_;
     }
 
@@ -45,7 +45,7 @@ contract SubscriptionsMarket is InternalOwner, IUpgradable {
         rates_ = _rates;
     }
 
-    function rates() external view responsible returns(mapping(uint64 => Rate) _rates) {
+    function rates() external view responsible returns (mapping(uint64 => Rate) _rates) {
         return {value: 0, flag: 64, bounce: false} rates_;
     }
 
@@ -61,9 +61,10 @@ contract SubscriptionsMarket is InternalOwner, IUpgradable {
 
             IMarketCallback(msg.sender).operationSuccess{value: 0.001 ever, flag: 1, bounce: false}(callbackId);
 
-            ISubscriptionsCollection(collection_).mintNft {value: 0, flag: 128, bounce: false}(
+            ISubscriptionsCollection(collection_).mintNft{value: 0, flag: 128, bounce: false}(
                 msg.sender,
                 now + rate.duration,
+                rateId,
                 msg.sender
             );
 
@@ -122,19 +123,19 @@ contract SubscriptionsMarket is InternalOwner, IUpgradable {
         address remainingGasTo;
 
         (
-            remainingGasTo,
-            owner,
-            collection_,
-            rates_,
-            totalSold,
-            totalWithdraw
+        remainingGasTo,
+        owner,
+        collection_,
+        rates_,
+        totalSold,
+        totalWithdraw
         ) = abi.decode(_data, (
-            address,
-            address,
-            address,
-            mapping(uint64 => Rate),
-            uint256,
-            uint256
+        address,
+        address,
+        address,
+        mapping(uint64 => Rate),
+        uint256,
+        uint256
         ));
 
         emit Upgraded();

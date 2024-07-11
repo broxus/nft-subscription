@@ -15,12 +15,14 @@ import "./libraries/NftJson.tsol";
 contract SubscriptionNft is TIP4_1Nft, ITIP4_2JSON_Metadata, TIP4_3Nft, INftInfoStructure {
 
     uint64 expireAt_;
+    uint64 rateId_;
 
     constructor(
         address owner,
         address sendGasTo,
         uint128 remainOnNft,
         uint64 _expireAt,
+        uint64 _rateId,
         uint128 indexDeployValue,
         uint128 indexDestroyValue,
         TvmCell codeIndex
@@ -38,6 +40,7 @@ contract SubscriptionNft is TIP4_1Nft, ITIP4_2JSON_Metadata, TIP4_3Nft, INftInfo
         ] = true;
 
         expireAt_ = _expireAt;
+        rateId_ = _rateId;
     }
 
     function expireAt() external view responsible returns (uint64 timestamp) {
@@ -48,10 +51,19 @@ contract SubscriptionNft is TIP4_1Nft, ITIP4_2JSON_Metadata, TIP4_3Nft, INftInfo
         } expireAt_;
     }
 
+    function rateId() external view responsible returns (uint64 rate) {
+        return {
+            value: 0,
+            flag: 64,
+            bounce: false
+        } rateId_;
+    }
+
     // it's responsible but very expensive to use on-chain
     function getJson() external override view responsible returns (string json) {
-        Attributes[] attributes = new INftInfoStructure.Attributes[](1);
+        Attributes[] attributes = new INftInfoStructure.Attributes[](2);
         attributes[0] = Attributes("expireAt", format("{}", expireAt_) );
+        attributes[1] = Attributes("rateId", format("{}", rateId_) );
 
         NftInfo info = NftInfo(
              "Example name",              //name

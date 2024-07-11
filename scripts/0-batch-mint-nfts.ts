@@ -17,6 +17,7 @@ const main = async (
       .batchMintNft({
         _recipient: new Address(recipient),
         _expireAt: Math.floor(expireAt.getTime() / 1000),
+        _rateId: 0,
         _mintCount: count,
         _offset: 0,
         _remainingGasTo: owner.account.address,
